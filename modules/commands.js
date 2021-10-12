@@ -24,9 +24,9 @@ module.exports = class Commands {
 
         this.rest.get(Routes.applicationGuildCommands(this.client_id, this.guild_id))
             .then(async response => {
-                await response.forEach(async command => {
+                await Promise.all(response.map(async (command) => {
                     await this.rest.delete(Routes.applicationGuildCommand(this.client_id, this.guild_id, command.id));
-                });
+                }));
                 await this.rest.put(Routes.applicationGuildCommands(this.client_id, this.guild_id), { body: this.commands })
                     .then(() => console.log(chalk.green('Successfully registered application commands.')))
                     .catch(err => console.log(chalk.bgRed.whiteBright(err)));
