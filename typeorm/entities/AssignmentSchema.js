@@ -11,13 +11,16 @@ module.exports = new EntitySchema({
             generated: true
         },
         name: {
-            type: "string"
+            type: "text"
         },
         description: {
-            type: "string"
+            type: "text"
         },
         due_date: {
-            type: "date"
+            type: "datetime"
+        },
+        reminders: {
+            type: "text"
         }
     }
 });

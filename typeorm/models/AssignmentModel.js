@@ -1,8 +1,8 @@
 module.exports = class Assignment {
-    constructor (id, name, description, due_date) {
-        this.id = number;
-        this.name = string;
-        this.description = string;
-        this.due_date = string;
+    constructor (name, description, due_date) {
+        this.name = name;
+        this.description = description;
+        this.due_date = due_date;
+        this.reminders = '[]'
     }
 };
