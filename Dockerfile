@@ -8,4 +8,6 @@ RUN npm install
 
 COPY . .
 
+VOLUME ["/config"]
+
 CMD [ "node", "index.js" ]
