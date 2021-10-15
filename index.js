@@ -1,11 +1,7 @@
-import "reflect-metadata";
-
 const chalk = require('chalk');
 const discord = require('discord.js');
 const Commands = require('./modules/commands.js');
 const Intents = discord.Intents;
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('/config/bot.db');
 const { SlashCommandBuilder, SlashCommandStringOption, SlashCommandMentionableOption, SlashCommandBooleanOption } = require('@discordjs/builders');
 require('dotenv').config();
 
@@ -30,7 +26,7 @@ client.on('ready', client => {
         new SlashCommandBuilder().setName('request-bot-name').setDescription('Want to recommend a new name for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('name').setDescription('What\'s the name?').setRequired(true)),
         new SlashCommandBuilder().setName('request-bot-pfp').setDescription('Want to recommend a new profile picture for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('image-url').setDescription('Paste the link for the image here!').setRequired(true)),
         new SlashCommandBuilder().setName('r1').setDescription('Someone misbehaving? Hit them with the "No Spamming" rule!').addMentionableOption(new SlashCommandMentionableOption().setName('mention').setDescription('Set field if you want someone to be mentioned')),
-        new SlashCommandBuilder().setName('set-assignment-notification').setDescription('Want to be notified when a new assignment is posted? If so, set this to true!').addBooleanOption(new SlashCommandBooleanOption().setName('enable').setDescription('Set this to true if you want to be notified!').setRequired(true))
+        new SlashCommandBuilder().setName('set-assignment-notification').setDescription('Want to be notified when a new assignment is posted? If so, set this to true!').addBooleanOption(new SlashCommandBooleanOption().setName('enable').setDescription('Set this to true if you want to be notified!').setRequired(true)),
         new SlashCommandBuilder().setName('set-assignment-reminders').setDescription('Want to be reminded at regular intervals before assignment is due or after it is assigned? If so, set this to true!').addBooleanOption(new SlashCommandBooleanOption().setName('enable').setDescription('Set this to true if you want to be notified!').setRequired(true))
     ]);
 });
