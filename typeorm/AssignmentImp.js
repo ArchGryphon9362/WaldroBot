@@ -9,6 +9,10 @@ module.exports = class AssignmentImp {
         return await (await db()).manager.save(new Assignment(name, description, due_date, reminders));
     }
 
+    async removeAssignment(id) {
+        return await (await db()).manager.delete(Assignment, id);
+    }
+
     async addReminder(id, discord_id, interval, times) {
         let assignment = await this.getAssignment(id);
         let reminders = JSON.parse(assignment.reminders);

@@ -22,14 +22,16 @@ module.exports = class Commands {
     set_up () {
         if (!this.commands) return;
 
+        // :: Restore deleting old commands after you're done!!
+        /*
         this.rest.get(Routes.applicationGuildCommands(this.client_id, this.guild_id))
             .then(async response => {
                 await Promise.all(response.map(async (command) => {
                     await this.rest.delete(Routes.applicationGuildCommand(this.client_id, this.guild_id, command.id));
                 }));
-                await this.rest.put(Routes.applicationGuildCommands(this.client_id, this.guild_id), { body: this.commands })
+                await */this.rest.put(Routes.applicationGuildCommands(this.client_id, this.guild_id), { body: this.commands })
                     .then(() => console.log(chalk.green('Successfully registered application commands.')))
-                    .catch(err => console.log(chalk.bgRed.whiteBright(err)));
-            });
+                    .catch(err => console.log(chalk.bgRed.whiteBright(err)));/*
+            });*/
     }
 };
