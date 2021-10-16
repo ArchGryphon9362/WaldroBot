@@ -68,7 +68,7 @@ client.once('ready', async client => {
 
 client.on('messageCreate', message => {
     try {
-        if (message.content.includes('<:CianPog:897468006869921823>')) {
+        if (message.content.includes('<:PogCian:897468006869921823>')) {
             message.react(client.emojis.resolveId('897468006869921823'));
         }
     }
