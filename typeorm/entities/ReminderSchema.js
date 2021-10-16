@@ -14,10 +14,10 @@ module.exports = new EntitySchema({
             type: "int"
         },
         interval: {
-            type: "number"
+            type: "int"
         },
         times: {
-            type: "number"
+            type: "int"
         }
     }
 });

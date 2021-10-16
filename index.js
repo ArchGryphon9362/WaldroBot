@@ -5,6 +5,7 @@ const Intents = discord.Intents;
 const { SlashCommandBuilder, SlashCommandStringOption, SlashCommandMentionableOption, SlashCommandBooleanOption, SlashCommandIntegerOption, SlashCommandUserOption } = require('@discordjs/builders');
 const AssignmentDb = require('./typeorm/AssignmentImp');
 const ReminderDb = require('./typeorm/ReminderImp');
+const GlobalDb = require('./typeorm/GlobalDb');
 require('dotenv').config();
 
 const new_state = chalk.bgBlueBright.whiteBright;
@@ -13,6 +14,7 @@ const warn = chalk.bgYellow;
 const log = chalk.green;
 const assignments = new AssignmentDb();
 const reminders = new ReminderDb();
+GlobalDb.get_db();
 
 const client = new discord.Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 client.login(process.env.TOKEN);
@@ -133,6 +135,7 @@ client.on('interactionCreate', async interaction => {
             case 'list-assignments':
                 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                let reminder_string = 'Off';
 
                 temp_embed = new discord.MessageEmbed()
                     .setColor('RANDOM')
@@ -141,9 +144,17 @@ client.on('interactionCreate', async interaction => {
 
                 let assignments_list = await assignments.listAssignments();
                 
+                if ((await reminders.listReminders()).map(value => {return value.discord_id}).indexOf(interaction.user.id) != -1) {
+                    reminder_string = '';
+                    reminders.filter(value2 => {value2.discord_id == interaction.user.id}).foreach(reminder => {
+                        reminder_string += '\n'
+                        reminder_string += `  - Every ${reminder.interval} hour${reminder.interval != 1 ? 's' : ''}, ${reminder.times} time${reminder.times != 1 ? 's' : ''} before the assignment is due`;
+                    });
+                }
+                
                 assignments_list.forEach(assignment => {
                     let due_date = new Date(assignment.due_date);
-                    temp_embed.addField(assignment.name, `${assignment.description}\n\nDue date: ${dayNames[due_date.getDay()]} ${due_date.getDate()}${(due_date.getDate() % 100 < 10 || due_date.getDate() % 100 > 19) ? (due_date.getDate() % 10 == 1) ? 'st' : (due_date.getDate() % 10 == 2) ? 'nd' : (due_date.getDate() % 10 == 3) ? 'rd' : 'th': 'th'} of ${monthNames[due_date.getMonth()]} ${due_date.getFullYear()} @ ${due_date.getHours().toString().padStart(2, '0')}:${due_date.getMinutes().toString().padStart(2, '0')}`);
+                    temp_embed.addField(assignment.name, `${assignment.description}\n\n\`\`\`yaml\nDue date: ${dayNames[due_date.getDay()]} ${due_date.getDate()}${(due_date.getDate() % 100 < 10 || due_date.getDate() % 100 > 19) ? (due_date.getDate() % 10 == 1) ? 'st' : (due_date.getDate() % 10 == 2) ? 'nd' : (due_date.getDate() % 10 == 3) ? 'rd' : 'th': 'th'} of ${monthNames[due_date.getMonth()]} ${due_date.getFullYear()} @ ${due_date.getHours().toString().padStart(2, '0')}:${due_date.getMinutes().toString().padStart(2, '0')}\n\nReminders: ${reminder_string}\`\`\``);
                 });
 
                 await interaction.deferReply({ephemeral: true});
@@ -154,15 +165,15 @@ client.on('interactionCreate', async interaction => {
                 const opts = interaction.options;
                 const due_date = new Date(opts.getInteger('due-year').toString().padStart(4, '0') + '-' + opts.getInteger('due-month').toString().padStart(2, '0') + '-' + opts.getInteger('due-date').toString().padStart(2, '0') + 'T' + opts.getInteger('due-hour').toString().padStart(2, '0') + ':' + opts.getInteger('due-minute').toString().padStart(2, '0') + 'Z')
                 if (due_date == 'Invalid Date') return;
-                reminders = [];
+                let reminders_array = [];
                 (await reminders.listReminders()).forEach(reminder => {
-                    reminders.push({
+                    reminders_array.push({
                         discord_id: reminder.discord_id,
                         interval: reminder.interval,
                         times: reminder.times,
                     });
                 });
-                assignments.addAssignment(opts.getString('name'), opts.getString('description'), due_date, JSON.stringify(reminders));
+                assignments.addAssignment(opts.getString('name'), opts.getString('description'), due_date, JSON.stringify(reminders_array));
 
                 await interaction.deferReply({ephemeral: true});
                 await interaction.followUp(`Added assignment "${opts.getString('name')}"!`);

@@ -4,12 +4,12 @@ const GlobalDb = require('./GlobalDb');
 
 const db = GlobalDb.get_db;
 
-module.exports = class AssignmentImp {
+module.exports = class ReminderImp {
     async addReminder(discord_id, interval, times) {
-        return await this.db().manager.save(new Reminder(discord_id, interval, times));
+        return await (await db()).manager.save(new Reminder(discord_id, interval, times));
     }
 
     async listReminders() {
-        return await this.db().manager.find(Reminder);
+        return await (await db()).manager.find(Reminder);
     }
 }
