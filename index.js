@@ -19,10 +19,11 @@ GlobalDb.get_db();
 const client = new discord.Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 client.login(process.env.TOKEN);
 
-function load_commands(commands) {
-    /*const command_thing = new Commands(process.env.TOKEN, process.env.CLIENT_ID, process.env.GUILD_ID);
+function load_commands(client, commands, perms) {
+    const command_thing = new Commands(client, process.env.TOKEN, process.env.CLIENT_ID, process.env.GUILD_ID);
     command_thing.set_commands(commands);
-    command_thing.set_up();*/
+    command_thing.set_perms(perms);
+    command_thing.set_up();
 }
 
 // :: set-assign-notification
@@ -33,7 +34,8 @@ function load_commands(commands) {
 // :: list-auto-reminders
 client.once('ready', async client => {
     console.log(new_state("WaldroBot is ready!"))
-    load_commands([
+    load_commands(client,
+        [
         new SlashCommandBuilder().setName('request-feature').setDescription('Let\'s say you wanna request a new bot feature... well then do!').addStringOption(new SlashCommandStringOption().setName('command-name').setDescription('Command/feature name. (if not a command, put literally any text in here)').setRequired(true)).addStringOption(new SlashCommandStringOption().setName('description').setDescription('Describe the function of this command/feature.').setRequired(true)),
         new SlashCommandBuilder().setName('request-bot-name').setDescription('Want to recommend a new name for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('name').setDescription('What\'s the name?').setRequired(true)),
         new SlashCommandBuilder().setName('request-bot-pfp').setDescription('Want to recommend a new profile picture for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('image-url').setDescription('Paste the link for the image here!').setRequired(true)),
@@ -43,10 +45,24 @@ client.once('ready', async client => {
         new SlashCommandBuilder().setName('remove-auto-assign-reminders').setDescription('Annoyed of reminders being automatically set? Remove them here').addIntegerOption(new SlashCommandIntegerOption().setName('reminder-id').setDescription('Id of automatic reminder, found using /list-automatic-reminders').setRequired(true)),
         new SlashCommandBuilder().setName('set-assign-reminders').setDescription('Want regular reminders before your assignment is due? If so, set this up!').addIntegerOption(new SlashCommandIntegerOption().setName('interval').setDescription('Every how many hours do you want to be reminded before assignment is due?')).addIntegerOption(new SlashCommandIntegerOption().setName('times').setDescription('How many time do you want to be reminded before assignment is due?')),
         new SlashCommandBuilder().setName('remove-assign-reminders').setDescription('Annoyed of regular reminders? Remove them here').addIntegerOption(new SlashCommandIntegerOption().setName('reminder-id').setDescription('Id of reminder, found using /list-assignments').setRequired(true)),
-        new SlashCommandBuilder().setName('create-assign').setDescription('Create an assignment for the people!').addStringOption(new SlashCommandStringOption().setName('name').setDescription('Name of assignment').setRequired(true)).addStringOption(new SlashCommandStringOption().setName('description').setDescription('Description of assignment').setRequired(true)).addIntegerOption(new SlashCommandIntegerOption().setName('due-date').setDescription('Due date\'s date').setRequired(true)).addIntegerOption(new SlashCommandIntegerOption().setName('due-month').setDescription('Due date\'s month').setRequired(true)).addIntegerOption(new SlashCommandIntegerOption().setName('due-year').setDescription('Due date\'s year').setRequired(true)).addIntegerOption(new SlashCommandIntegerOption().setName('due-hour').setDescription('Due date\'s hour').setRequired(true)).addIntegerOption(new SlashCommandIntegerOption().setName('due-minute').setDescription('Due date\'s minute').setRequired(true)),
-        new SlashCommandBuilder().setName('delete-assign').setDescription('Delete an assignment!').addIntegerOption(new SlashCommandIntegerOption().setName('assignment-id').setDescription('Id of assignment, found using /list-assignments').setRequired(true)),
-        new SlashCommandBuilder().setName('list-assigns').setDescription('List all assignments'),
+        new SlashCommandBuilder().setName('create-assign').setDescription('Create an assignment for the people!').addStringOption(new SlashCommandStringOption().setName('name').setDescription('Name of assignment').setRequired(true)).addStringOption(new SlashCommandStringOption().setName('description').setDescription('Description of assignment').setRequired(true)).addIntegerOption(new SlashCommandIntegerOption().setName('due-date').setDescription('Due date\'s date').setRequired(true)).addIntegerOption(new SlashCommandIntegerOption().setName('due-month').setDescription('Due date\'s month').setRequired(true)).addIntegerOption(new SlashCommandIntegerOption().setName('due-year').setDescription('Due date\'s year').setRequired(true)).addIntegerOption(new SlashCommandIntegerOption().setName('due-hour').setDescription('Due date\'s hour').setRequired(true)).addIntegerOption(new SlashCommandIntegerOption().setName('due-minute').setDescription('Due date\'s minute').setRequired(true)).addStringOption(new SlashCommandStringOption().setName('tag').setDescription('Tag to set on assignment (default: none)')),
+        new SlashCommandBuilder().setName('remove-assign').setDescription('Delete an assignment!').addIntegerOption(new SlashCommandIntegerOption().setName('assignment-id').setDescription('Id of assignment, found using /list-assignments').setRequired(true)),
+        new SlashCommandBuilder().setName('list-assigns').setDescription('List all assignments').addStringOption(new SlashCommandStringOption().setName('tag').setDescription('Only show assignments with certain tag (default: all)')),
         new SlashCommandBuilder().setName('list-auto-reminders').setDescription('List all default reminders')
+    ], [
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
     ]);
 });
 
@@ -153,7 +169,7 @@ client.on('interactionCreate', async interaction => {
                     .setTitle('List of Assignments!')
                     .setDescription(`List of currently added assignments:`)
 
-                let assignments_list = await assignments.listAssignments();
+                let assignments_list = await assignments.listAllAssignments();
                 
                 if ((await reminders.listReminders()).map(value => {return value.discord_id}).indexOf(interaction.user.id) != -1) {
                     reminder_string = '';
@@ -165,7 +181,7 @@ client.on('interactionCreate', async interaction => {
                 
                 assignments_list.forEach(assignment => {
                     let due_date = new Date(assignment.due_date);
-                    temp_embed.addField(`${assignment.name} (id: ${assignment.id})`, `${assignment.description}\n\n\`\`\`yaml\nDue date: ${dayNames[due_date.getDay()]} ${due_date.getDate()}${(due_date.getDate() % 100 < 10 || due_date.getDate() % 100 > 19) ? (due_date.getDate() % 10 == 1) ? 'st' : (due_date.getDate() % 10 == 2) ? 'nd' : (due_date.getDate() % 10 == 3) ? 'rd' : 'th': 'th'} of ${monthNames[due_date.getMonth()]} ${due_date.getFullYear()} @ ${due_date.getHours().toString().padStart(2, '0')}:${due_date.getMinutes().toString().padStart(2, '0')}\n\nReminders: ${reminder_string}\`\`\``);
+                    temp_embed.addField(`${assignment.name} (id: ${assignment.id})`, `${assignment.description}\n\n\`\`\`yaml\nDue date: ${dayNames[due_date.getDay()]} ${due_date.getDate()}${(due_date.getDate() % 100 < 10 || due_date.getDate() % 100 > 19) ? (due_date.getDate() % 10 == 1) ? 'st' : (due_date.getDate() % 10 == 2) ? 'nd' : (due_date.getDate() % 10 == 3) ? 'rd' : 'th': 'th'} of ${monthNames[due_date.getMonth()]} ${due_date.getFullYear()} @ ${due_date.getHours().toString().padStart(2, '0')}:${due_date.getMinutes().toString().padStart(2, '0')}\n\nReminders: ${reminder_string}\n\nTag: ${assignment.tag != 'none' ? assignment.tag : 'None'}\`\`\``);
                 });
 
                 await interaction.deferReply({ephemeral: true});
@@ -178,24 +194,26 @@ client.on('interactionCreate', async interaction => {
                 if (due_date == 'Invalid Date') return;
                 let reminders_array = [];
                 (await reminders.listReminders()).forEach(reminder => {
-                    reminders_array.push({
-                        discord_id: reminder.discord_id,
-                        interval: reminder.interval,
-                        times: reminder.times,
-                    });
+                    if (opts.getString('tag') == reminder.tag || opts.getString('tag') == '' || opts.getString('tag') == 'none') {
+                        reminders_array.push({
+                            discord_id: reminder.discord_id,
+                            interval: reminder.interval,
+                            times: reminder.times,
+                        });
+                    }
                 });
-                await assignments.addAssignment(opts.getString('name'), opts.getString('description'), due_date, JSON.stringify(reminders_array));
+                await assignments.addAssignment(opts.getString('name'), opts.getString('description'), due_date, JSON.stringify(reminders_array), !opts.getString('tag') ? 'none' : opts.getString('tag'));
 
                 await interaction.deferReply({ephemeral: true});
                 await interaction.followUp(`Added assignment "${opts.getString('name')}"!`);
                 break;
-            case 'delete-assign':
-                if (!(await assignments.getAssignment(interaction.options.getInteger('assignment-id')))) return;
-                let temp_name = await assignments.getAssignment(interaction.options.getInteger('assignment-id')).name;
+            case 'remove-assign':
+                if (!(await assignments.getAssignmentById(interaction.options.getInteger('assignment-id')))) return;
+                let temp_name = (await assignments.getAssignmentById(interaction.options.getInteger('assignment-id'))).name;
                 await assignments.removeAssignment(interaction.options.getInteger('assignment-id'));
 
                 await interaction.deferReply({ephemeral: true});
-                await interaction.followUp(`Remove assignment "${temp-name}"!`);
+                await interaction.followUp(`Remove assignment "${temp_name}"!`);
                 break;
         }
     }

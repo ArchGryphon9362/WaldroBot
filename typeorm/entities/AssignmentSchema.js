@@ -19,6 +19,9 @@ module.exports = new EntitySchema({
         due_date: {
             type: "datetime"
         },
+        tag: {
+            type: "text"
+        },
         reminders: {
             type: "text"
         }
