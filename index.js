@@ -94,6 +94,8 @@ client.on('messageUpdate', message => {
 
 client.on('interactionCreate', async interaction => {
     if (interaction.isCommand()) {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         const { commandName } = interaction;
         let temp_embed = null;
 
@@ -164,8 +166,6 @@ client.on('interactionCreate', async interaction => {
                 await client.users.resolve('383363277100417027').send({embeds: [temp_embed]});
                 break;
             case 'list-assigns':
-                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
                 let reminder_string = 'Off';
 
                 temp_embed = new discord.MessageEmbed()
@@ -199,9 +199,6 @@ client.on('interactionCreate', async interaction => {
                 if (due_date == 'Invalid Date') return;
                 let reminders_array = [];
                 (await reminders.listReminders()).forEach(reminder => {
-                    console.log(reminder.tag);
-                    console.log(reminder.tag == opts.getString('tag'));
-                    console.log(reminder.tag == 'all');
                     if (opts.getString('tag') == reminder.tag || reminder.tag == 'all') {
                         reminders_array.push({
                             discord_id: reminder.discord_id,
@@ -211,6 +208,23 @@ client.on('interactionCreate', async interaction => {
                     }
                 });
                 await assignments.addAssignment(opts.getString('name'), opts.getString('description'), due_date, JSON.stringify(reminders_array), !opts.getString('tag') ? 'none' : opts.getString('tag'));
+
+                temp_embed = new discord.MessageEmbed()
+                    .setColor('RANDOM')
+                    .setTitle('New Assignment!')
+                    .setDescription(`A new assignment has been posted:`);
+
+                temp_embed.addField('Name', opts.getString('name'));
+                temp_embed.addField('Description', opts.getString('description'));
+                temp_embed.addField('Due date', `${dayNames[due_date.getDay()]} ${due_date.getDate()}${(due_date.getDate() % 100 < 10 || due_date.getDate() % 100 > 19) ? (due_date.getDate() % 10 == 1) ? 'st' : (due_date.getDate() % 10 == 2) ? 'nd' : (due_date.getDate() % 10 == 3) ? 'rd' : 'th': 'th'} of ${monthNames[due_date.getMonth()]} ${due_date.getFullYear()} @ ${due_date.getHours().toString().padStart(2, '0')}:${due_date.getMinutes().toString().padStart(2, '0')}`);
+                temp_embed.addField('Tag', !opts.getString('tag') ? 'none' : opts.getString('tag'));
+
+                // :: Don't forget to check for users who left the server!!
+                (await assignment_notifs.listAllAssignmentNotifs()).forEach(assignment => {
+                    if (assignment.tag == 'all' || assignment.tag == (!opts.getString('tag') ? 'none' : opts.getString('tag'))) {
+                        client.users.resolve(assignment.discord_id).send({embeds: [temp_embed]});
+                    }
+                })
 
                 await interaction.deferReply({ephemeral: true});
                 await interaction.followUp(`Added assignment "${opts.getString('name')}"!`);
