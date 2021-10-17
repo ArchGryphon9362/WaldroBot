@@ -11,7 +11,8 @@ module.exports = {
                 database: '/config/bot.db',
                 entities: [
                     require('./entities/AssignmentSchema'),
-                    require('./entities/ReminderSchema')
+                    require('./entities/ReminderSchema'),
+                    require('./entities/AssignmentNotificationSchema')
                 ],
                 synchronize: true
             });

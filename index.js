@@ -2,9 +2,10 @@ const chalk = require('chalk');
 const discord = require('discord.js');
 const Commands = require('./modules/commands');
 const Intents = discord.Intents;
-const { SlashCommandBuilder, SlashCommandStringOption, SlashCommandMentionableOption, SlashCommandBooleanOption, SlashCommandIntegerOption, SlashCommandUserOption } = require('@discordjs/builders');
+const { SlashCommandBuilder, SlashCommandStringOption, SlashCommandMentionableOption, SlashCommandBooleanOption, SlashCommandIntegerOption, SlashCommandUserOption, SlashCommandNumberOption } = require('@discordjs/builders');
 const AssignmentDb = require('./typeorm/AssignmentImp');
 const ReminderDb = require('./typeorm/ReminderImp');
+const AssignmentNotificationDb = require('./typeorm/AssignmentNotificationImp');
 const GlobalDb = require('./typeorm/GlobalDb');
 require('dotenv').config();
 
@@ -14,6 +15,7 @@ const warn = chalk.bgYellow;
 const log = chalk.green;
 const assignments = new AssignmentDb();
 const reminders = new ReminderDb();
+const assignment_notifs = new AssignmentNotificationDb();
 GlobalDb.get_db();
 
 const client = new discord.Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
@@ -26,12 +28,12 @@ function load_commands(client, commands, perms) {
     command_thing.set_up();
 }
 
-// :: set-assign-notification
 // :: set-auto-assign-reminders
 // :: remove-auto-assign-reminders
 // :: set-assign-reminders
-// :: remove-assig-reminders
+// :: remove-assign-reminders
 // :: list-auto-reminders
+// :: change-assign-tag
 client.once('ready', async client => {
     console.log(new_state("WaldroBot is ready!"))
     load_commands(client,
@@ -40,7 +42,9 @@ client.once('ready', async client => {
         new SlashCommandBuilder().setName('request-bot-name').setDescription('Want to recommend a new name for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('name').setDescription('What\'s the name?').setRequired(true)),
         new SlashCommandBuilder().setName('request-bot-pfp').setDescription('Want to recommend a new profile picture for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('image-url').setDescription('Paste the link for the image here!').setRequired(true)),
         new SlashCommandBuilder().setName('r1').setDescription('Someone misbehaving? Hit them with the "No Spamming" rule!').addUserOption(new SlashCommandUserOption().setName('mention').setDescription('Set field if you want someone to be mentioned')),
-        new SlashCommandBuilder().setName('set-assign-notification').setDescription('Want to be notified when a new assignment is posted? If so, set this to true!').addBooleanOption(new SlashCommandBooleanOption().setName('enable').setDescription('Set this to true if you want to be notified!').setRequired(true)),
+        new SlashCommandBuilder().setName('set-assign-notification').setDescription('Want to be notified when a new assignment is posted? If so, set this up!').addStringOption(new SlashCommandStringOption().setName('tag').setDescription('Only on assignments with certain tag (default: all)')),
+        new SlashCommandBuilder().setName('remove-assign-notification').setDescription('Don\'t want to be notified when a new assignment is posted anymore? Remove it!').addIntegerOption(new SlashCommandIntegerOption().setName('assignment-notification-id').setDescription('Id of assignment notification, found using /list-assign-notification').setRequired(true)),
+        new SlashCommandBuilder().setName('list-assign-notifications').setDescription('Returns list of "assignment has been set" notifications'),
         new SlashCommandBuilder().setName('set-auto-assign-reminders').setDescription('Do you want reminders on assignments to be automatically set? If so, set this up!').addIntegerOption(new SlashCommandIntegerOption().setName('interval').setDescription('Every how many hours do you want to be reminded before assignment is due?')).addIntegerOption(new SlashCommandIntegerOption().setName('times').setDescription('How many time do you want to be reminded before assignment is due?')),
         new SlashCommandBuilder().setName('remove-auto-assign-reminders').setDescription('Annoyed of reminders being automatically set? Remove them here').addIntegerOption(new SlashCommandIntegerOption().setName('reminder-id').setDescription('Id of automatic reminder, found using /list-automatic-reminders').setRequired(true)),
         new SlashCommandBuilder().setName('set-assign-reminders').setDescription('Want regular reminders before your assignment is due? If so, set this up!').addIntegerOption(new SlashCommandIntegerOption().setName('interval').setDescription('Every how many hours do you want to be reminded before assignment is due?')).addIntegerOption(new SlashCommandIntegerOption().setName('times').setDescription('How many time do you want to be reminded before assignment is due?')),
@@ -167,19 +171,20 @@ client.on('interactionCreate', async interaction => {
                 temp_embed = new discord.MessageEmbed()
                     .setColor('RANDOM')
                     .setTitle('List of Assignments!')
-                    .setDescription(`List of currently added assignments:`)
-
-                let assignments_list = await assignments.listAllAssignments();
+                    .setDescription(`List of currently added assignments:`);
                 
-                if ((await reminders.listReminders()).map(value => {return value.discord_id}).indexOf(interaction.user.id) != -1) {
-                    reminder_string = '';
-                    reminders.filter(value2 => {value2.discord_id == interaction.user.id}).foreach(reminder => {
-                        reminder_string += '\n'
-                        reminder_string += `  - Every ${reminder.interval} hour${reminder.interval != 1 ? 's' : ''}, ${reminder.times} time${reminder.times != 1 ? 's' : ''} before the assignment is due`;
-                    });
-                }
+                let assignments_list = await assignments.listAllAssignments();
+                if (interaction.options.getString('tag') && interaction.options.getString('tag') != 'all') assignments_list = assignments_list.filter(value => {return value.tag == interaction.options.getString('tag')})
                 
                 assignments_list.forEach(assignment => {
+                    if (JSON.parse(assignment.reminders).map(value => {return value.discord_id}).indexOf(interaction.user.id) != -1) {
+                        reminder_string = '';
+                        JSON.parse(assignment.reminders).filter(value2 => {return value2.discord_id == interaction.user.id}).forEach(reminder => {
+                            reminder_string += '\n'
+                            reminder_string += `  - Every ${reminder.interval} hour${reminder.interval != 1 ? 's' : ''}, ${reminder.times} time${reminder.times != 1 ? 's' : ''} before the assignment is due`;
+                        });
+                    }
+
                     let due_date = new Date(assignment.due_date);
                     temp_embed.addField(`${assignment.name} (id: ${assignment.id})`, `${assignment.description}\n\n\`\`\`yaml\nDue date: ${dayNames[due_date.getDay()]} ${due_date.getDate()}${(due_date.getDate() % 100 < 10 || due_date.getDate() % 100 > 19) ? (due_date.getDate() % 10 == 1) ? 'st' : (due_date.getDate() % 10 == 2) ? 'nd' : (due_date.getDate() % 10 == 3) ? 'rd' : 'th': 'th'} of ${monthNames[due_date.getMonth()]} ${due_date.getFullYear()} @ ${due_date.getHours().toString().padStart(2, '0')}:${due_date.getMinutes().toString().padStart(2, '0')}\n\nReminders: ${reminder_string}\n\nTag: ${assignment.tag != 'none' ? assignment.tag : 'None'}\`\`\``);
                 });
@@ -194,7 +199,10 @@ client.on('interactionCreate', async interaction => {
                 if (due_date == 'Invalid Date') return;
                 let reminders_array = [];
                 (await reminders.listReminders()).forEach(reminder => {
-                    if (opts.getString('tag') == reminder.tag || opts.getString('tag') == '' || opts.getString('tag') == 'none') {
+                    console.log(reminder.tag);
+                    console.log(reminder.tag == opts.getString('tag'));
+                    console.log(reminder.tag == 'all');
+                    if (opts.getString('tag') == reminder.tag || reminder.tag == 'all') {
                         reminders_array.push({
                             discord_id: reminder.discord_id,
                             interval: reminder.interval,
@@ -214,6 +222,37 @@ client.on('interactionCreate', async interaction => {
 
                 await interaction.deferReply({ephemeral: true});
                 await interaction.followUp(`Remove assignment "${temp_name}"!`);
+                break;
+            case 'set-assign-notification':
+                if ((await assignment_notifs.getAssignmentNotifByTag(!interaction.options.getString('tag') ? 'all' : interaction.options.getString('tag'))).length) return;
+                await assignment_notifs.addAssignmentNotif(interaction.user.id, !interaction.options.getString('tag') ? 'all' : interaction.options.getString('tag'));
+
+                await interaction.deferReply({ephemeral: true});
+                await interaction.followUp(`Created assignment notification${interaction.options.getString('tag') ? ' for tag "' + interaction.options.getString('tag') + '"' : ''}!`);
+                break;
+            case 'list-assign-notifications':
+                let assign_notifs = await assignment_notifs.listAllAssignmentNotifs();
+
+                temp_embed = new discord.MessageEmbed()
+                    .setColor('RANDOM')
+                    .setTitle('List of Assignment Notifications!')
+                    .setDescription(`List of current assignment notifications:`);
+
+                assign_notifs.forEach(notif => {
+                    temp_embed.addField(notif.tag, '(id: ' + notif.id + ')');
+                });
+
+                await interaction.deferReply({ephemeral: true});
+                await interaction.followUp({embeds: [temp_embed]});
+                break;
+            case 'remove-assign-notification':
+                if (!(await assignment_notifs.getAssignmentNotifById(interaction.options.getInteger('assignment-notification-id')))) return;
+                let assign_notif_tag = (await assignment_notifs.getAssignmentNotifById(interaction.options.getInteger('assignment-notification-id'))).tag;
+
+                await assignment_notifs.removeAssignmentNotif(interaction.options.getInteger('assignment-notification-id'));
+
+                await interaction.deferReply({ephemeral: true});
+                await interaction.followUp(`Remove assignment notification with tag "${assign_notif_tag}"`);
                 break;
         }
     }

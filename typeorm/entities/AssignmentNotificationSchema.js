@@ -1,9 +1,9 @@
 const EntitySchema = require('typeorm').EntitySchema;
-const Reminder = require('../models/ReminderModel');
+const AssignmentNotification = require('../models/AssignmentNotificationModel');
 
 module.exports = new EntitySchema({
-    name: 'Reminder',
-    target: Reminder,
+    name: 'AssignmentNotification',
+    target: AssignmentNotification,
     columns: {
         id: {
             primary: true,
@@ -12,12 +12,6 @@ module.exports = new EntitySchema({
         },
         discord_id: {
             type: "text"
-        },
-        interval: {
-            type: "int"
-        },
-        times: {
-            type: "int"
         },
         tag: {
             type: "text"
