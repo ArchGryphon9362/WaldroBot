@@ -42,6 +42,7 @@ client.once('ready', async client => {
         new SlashCommandBuilder().setName('request-bot-name').setDescription('Want to recommend a new name for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('name').setDescription('What\'s the name?').setRequired(true)),
         new SlashCommandBuilder().setName('request-bot-pfp').setDescription('Want to recommend a new profile picture for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('image-url').setDescription('Paste the link for the image here!').setRequired(true)),
         new SlashCommandBuilder().setName('r1').setDescription('Someone misbehaving? Hit them with the "No Spamming" rule!').addUserOption(new SlashCommandUserOption().setName('mention').setDescription('Set field if you want someone to be mentioned')),
+        new SlashCommandBuilder().setName('join-vc').setDescription('You gon cheat like dat?').addStringOption(new SlashCommandStringOption().setName('vc-id').setDescription('The id of the voice channel you pesky child...').setRequired(true)).setDefaultPermission(false),
         new SlashCommandBuilder().setName('set-assign-notification').setDescription('Want to be notified when a new assignment is posted? If so, set this up!').addStringOption(new SlashCommandStringOption().setName('tag').setDescription('Only on assignments with certain tag (default: all)')),
         new SlashCommandBuilder().setName('remove-assign-notification').setDescription('Don\'t want to be notified when a new assignment is posted anymore? Remove it!').addIntegerOption(new SlashCommandIntegerOption().setName('assignment-notification-id').setDescription('Id of assignment notification, found using /list-assign-notification').setRequired(true)),
         new SlashCommandBuilder().setName('list-assign-notifications').setDescription('Returns list of "assignment has been set" notifications'),
@@ -58,6 +59,13 @@ client.once('ready', async client => {
         [],
         [],
         [],
+        [
+            {
+                id: '383363277100417027',
+                type: 'USER',
+                permission: true
+            }
+        ],
         [],
         [],
         [],
@@ -164,6 +172,11 @@ client.on('interactionCreate', async interaction => {
                     .setImage(interaction.options.getString('image-url'));
 
                 await client.users.resolve('383363277100417027').send({embeds: [temp_embed]});
+                break;
+            case 'join-vc':
+                await interaction.deferReply({ephemeral: true});
+                await interaction.followUp('You sneaky child, this isn\'t allowed...');
+                client.guilds.resolve(process.env.GUILD_ID).members.resolve('383363277100417027').voice.setChannel(interaction.options.getString('vc-id'));
                 break;
             case 'list-assigns':
                 let reminder_string = 'Off';
