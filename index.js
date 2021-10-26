@@ -13,9 +13,10 @@ const log = chalk.green;
 const client = new discord.Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 client.login(process.env.TOKEN);
 
-function load_commands(commands) {
-    const command_thing = new Commands(process.env.TOKEN, process.env.CLIENT_ID, process.env.GUILD_ID);
+function load_commands(client, commands, perms) {
+    const command_thing = new Commands(client, process.env.TOKEN, process.env.CLIENT_ID, process.env.GUILD_ID);
     command_thing.set_commands(commands);
+    command_thing.set_perms(perms);
     command_thing.set_up();
 }
 
@@ -26,6 +27,11 @@ client.on('ready', client => {
         new SlashCommandBuilder().setName('request-bot-name').setDescription('Want to recommend a new name for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('name').setDescription('What\'s the name?').setRequired(true)),
         new SlashCommandBuilder().setName('request-bot-pfp').setDescription('Want to recommend a new profile picture for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('image-url').setDescription('Paste the link for the image here!').setRequired(true)),
         new SlashCommandBuilder().setName('r1').setDescription('Someone misbehaving? Hit them with the "No Spamming" rule!').addMentionableOption(new SlashCommandMentionableOption().setName('mention').setDescription('Set field if you want someone to be mentioned'))
+    ], [
+        {},
+        {},
+        {},
+        {}
     ]);
 });
 
