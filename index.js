@@ -22,24 +22,25 @@ function load_commands(client, commands, perms) {
 
 client.on('ready', client => {
     console.log(new_state("WaldroBot is ready!"))
-    load_commands([
+    load_commands(client, 
+        [
         new SlashCommandBuilder().setName('request-feature').setDescription('Let\'s say you wanna request a new bot feature... well then do!').addStringOption(new SlashCommandStringOption().setName('command-name').setDescription('Command/feature name. (if not a command, put literally any text in here)').setRequired(true)).addStringOption(new SlashCommandStringOption().setName('description').setDescription('Describe the function of this command/feature.').setRequired(true)),
         new SlashCommandBuilder().setName('request-bot-name').setDescription('Want to recommend a new name for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('name').setDescription('What\'s the name?').setRequired(true)),
         new SlashCommandBuilder().setName('request-bot-pfp').setDescription('Want to recommend a new profile picture for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('image-url').setDescription('Paste the link for the image here!').setRequired(true)),
         new SlashCommandBuilder().setName('r1').setDescription('Someone misbehaving? Hit them with the "No Spamming" rule!').addMentionableOption(new SlashCommandMentionableOption().setName('mention').setDescription('Set field if you want someone to be mentioned')),
         new SlashCommandBuilder().setName('join-vc').setDescription('You gon cheat like dat?').addStringOption(new SlashCommandStringOption().setName('vc-id').setDescription('The id of the voice channel you pesky child...').setRequired(true)).setDefaultPermission(false)
-    ], [
-        [],
-        [],
-        [],
-        [],
-        [
-            {
-                id: '383363277100417027',
-                type: 'USER',
-                permission: true
-            }
-        ]
+        ], [
+            [],
+            [],
+            [],
+            [],
+            [
+                {
+                    id: '383363277100417027',
+                    type: 'USER',
+                    permission: true
+                }
+            ]
     ]);
 });
 
