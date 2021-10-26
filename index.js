@@ -28,10 +28,10 @@ client.on('ready', client => {
         new SlashCommandBuilder().setName('request-bot-pfp').setDescription('Want to recommend a new profile picture for the bot? Go on!').addStringOption(new SlashCommandStringOption().setName('image-url').setDescription('Paste the link for the image here!').setRequired(true)),
         new SlashCommandBuilder().setName('r1').setDescription('Someone misbehaving? Hit them with the "No Spamming" rule!').addMentionableOption(new SlashCommandMentionableOption().setName('mention').setDescription('Set field if you want someone to be mentioned'))
     ], [
-        {},
-        {},
-        {},
-        {}
+        [],
+        [],
+        [],
+        []
     ]);
 });
 
