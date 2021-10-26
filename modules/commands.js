@@ -3,20 +3,28 @@ const { Routes } = require('discord-api-types/v9');
 const chalk = require('chalk');
 
 module.exports = class Commands {
-    constructor (token, client_id, guild_id) {
+    constructor (client, token, client_id, guild_id) {
+        if (!client) throw("No client provided");
         if (!token) throw("Token not provided");
         if (!client_id) throw("Client Id not provided");
         if (!guild_id) throw("Guild Id not provided");
 
+        this.client = client;
         this.rest = new REST({ version: '9' }).setToken(token);
         this.client_id = client_id;
         this.guild_id = guild_id;
     }
 
     set_commands (commands) {
-        if (!commands) throw("No commands provided")
+        if (!commands) throw("No commands provided");
 
         this.commands = commands.map(command => command.toJSON());
+    }
+
+    set_perms (perms) {
+        if (!perms) throw("No commands provided");
+
+        this.perms = perms;
     }
 
     set_up () {
