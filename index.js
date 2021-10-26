@@ -75,6 +75,8 @@ client.once('ready', async client => {
         [],
         [],
         [],
+        [],
+        []
     ]);
 });
 

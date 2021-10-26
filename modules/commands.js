@@ -34,11 +34,11 @@ module.exports = class Commands {
             .then(() => console.log(chalk.green('Successfully registered application commands.')))
             .catch(err => console.log(chalk.bgRed.whiteBright(err)));
         
-        this.rest.get(Routes.applicationCommands(this.client_id))
+        this.rest.get(Routes.applicationGuildCommands(this.client_id, this.guild_id))
             .then(async commands => {
-                for (let i; i < commands.length; i++) {
-                    if (commands[i].length) {
-                        let cmd = await this.client.guilds.cache.get(this.guild_id)?.commands.fetch(commands[i]);
+                for (let i = 0; i < commands.length; i++) {
+                    if (this.perms[i].length) {
+                        let cmd = await this.client.guilds.cache.get(this.guild_id)?.commands.fetch(commands[i].id);
                         await cmd.permissions.add({ permissions: this.perms[i] });
                     }
                 }
