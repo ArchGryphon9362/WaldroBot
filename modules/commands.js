@@ -36,7 +36,7 @@ module.exports = class Commands {
         
         this.rest.get(Routes.applicationGuildCommands(this.client_id, this.guild_id))
             .then(async commands => {
-                for (let i = 0; i < commands.length; i++) {
+                for (let i = 0; i < this.commands.length; i++) {
                     if (this.perms[i].length) {
                         let cmd = await this.client.guilds.cache.get(this.guild_id)?.commands.fetch(commands.filter(item => {return item.name == this.commands[i].name ? true : false})[0].id);
                         await cmd.permissions.add({ permissions: this.perms[i] });
