@@ -38,8 +38,6 @@ module.exports = class Commands {
             .then(async commands => {
                 for (let i = 0; i < commands.length; i++) {
                     if (this.perms[i].length) {
-                        console.log(this.commands[i].name);
-                        console.log(this.perms[i]);
                         let cmd = await this.client.guilds.cache.get(this.guild_id)?.commands.fetch(commands.filter(item => {return item.name == this.commands[i].name ? true : false})[0].id);
                         await cmd.permissions.add({ permissions: this.perms[i] });
                     }
