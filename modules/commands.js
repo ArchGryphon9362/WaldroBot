@@ -22,14 +22,18 @@ module.exports = class Commands {
     set_up () {
         if (!this.commands) return;
 
-        this.rest.get(Routes.applicationGuildCommands(this.client_id, this.guild_id))
-            .then(async response => {
-                await Promise.all(response.map(async (command) => {
-                    await this.rest.delete(Routes.applicationGuildCommand(this.client_id, this.guild_id, command.id));
-                }));
-                await this.rest.put(Routes.applicationGuildCommands(this.client_id, this.guild_id), { body: this.commands })
-                    .then(() => console.log(chalk.green('Successfully registered application commands.')))
-                    .catch(err => console.log(chalk.bgRed.whiteBright(err)));
-            });
+        this.rest.put(Routes.applicationGuildCommands(this.client_id, this.guild_id), { body: this.commands })
+            .then(() => console.log(chalk.green('Successfully registered application commands.')))
+            .catch(err => console.log(chalk.bgRed.whiteBright(err)));
+        
+        this.rest.get(Routes.applicationCommands(this.client_id))
+            .then(async commands => {
+                for (let i; i < commands.length; i++) {
+                    if (commands[i].length) {
+                        let cmd = await this.client.guilds.cache.get(this.guild_id)?.commands.fetch(commands[i]);
+                        await cmd.permissions.add({ permissions: this.perms[i] });
+                    }
+                }
+            })
     }
 };
